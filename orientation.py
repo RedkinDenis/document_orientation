@@ -53,6 +53,12 @@ def is_text_orientation_right(image):
         return True
 
 def get_horizontal_bounding_box(image):
+
+    """
+    Вспомогательная функция для определения ориентации
+    Ограничивает весь документ рамкой и возвращает ее длину и ширину
+    """
+
     if image is None:
         print("Ошибка: изображение не загружено.")
         return
@@ -83,13 +89,24 @@ def rotate_image_90(image):
     return rotated_image
 
 def orientation_detect(image):
+
+    """
+    это основная функция.
+    return: возвращает кортеж (orientation, angle)
+    orientation: ориентация документа (портретная или альбомная)
+    angle: угол на который необходимо повернуть документ для нормализации
+    """
+
     angle = 0
     orientation = ''
 
+    # проверяется правильность ориентации букв.
+    # на данном этапе случаи поворота на 0 и 180 и на 90 и 270 градусов между собой не различимы
     if not is_text_orientation_right(image):
         # print('rotate')
         image = rotate_image_90(image)
         angle += 90
+    # получаем документ который однозначно повернут на 0 или 180 градусов
     
     (w, h) = get_horizontal_bounding_box(image)
 
@@ -99,6 +116,7 @@ def orientation_detect(image):
     else:
         orientation = "albumn"
 
+    # если текст все же перевернут, добавляем 180 к углу поворота
     if (is_text_upside_down(image)):
         angle += 180
 
@@ -106,6 +124,13 @@ def orientation_detect(image):
 
 
 def is_text_upside_down(image):
+
+    """
+    функция определяющая перевернут ли текст документа на 180 градусов
+
+    принцип: текст разбивается на строки и каждая строка обрабатывается отдельно.
+    в результате ориентация всего документа определяется по большинству
+    """
 
     lines_count = count_lines(image)
     # print(f"lines count - {lines_count}")
