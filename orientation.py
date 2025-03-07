@@ -7,10 +7,16 @@ from find_lines import *
 
 
 def is_text_orientation_right(image):
+
+    """
+    Метод основан на том, что в английском и русском языках количество вертикальных составляющих
+    букв значительно больше чем количество горизонтальных составляющих
+    """
+
     # Размытие для уменьшения шума
     blurred_image = cv2.GaussianBlur(image, (5, 5), 0)
 
-    # Ядра для вертикальных и горизонтальных линий
+    # Ядра для вертикальных и горизонтальных линий (использованы стандартные ядра, взятые из интеренета)
     kernel_vertical = np.array([[-1, 0, 1],
                                 [-2, 0, 2],
                                 [-1, 0, 1]])
@@ -26,6 +32,8 @@ def is_text_orientation_right(image):
     # Пороговая обработка
     _, vertical_thresh = cv2.threshold(vertical_lines, 50, 255, cv2.THRESH_BINARY)
     _, horizontal_thresh = cv2.threshold(horizontal_lines, 50, 255, cv2.THRESH_BINARY)
+
+    # Удаляем пересечение множеств, чтобы полностью отделить вертикальные линии от горизонтальных
 
     # Нахождение пересечения
     intersection = cv2.bitwise_and(vertical_thresh, horizontal_thresh)
@@ -65,7 +73,7 @@ def get_horizontal_bounding_box(image):
     # Объединяем все контуры в один
     all_contours = np.vstack(contours)
 
-    # Вычисляем bounding box с нулевым углом поворота
+    # Вычисляем ограничивающую рамку
     x, y, w, h = cv2.boundingRect(all_contours)
 
     return (w, h)
@@ -75,28 +83,32 @@ def rotate_image_90(image):
     return rotated_image
 
 def orientation_detect(image):
+    angle = 0
+    orientation = ''
+
     if not is_text_orientation_right(image):
-        print('rotate')
+        # print('rotate')
         image = rotate_image_90(image)
+        angle += 90
     
     (w, h) = get_horizontal_bounding_box(image)
 
+    # у текста с портретной ориентацией высота ограничивающей рамки больше чем ее ширина (и наоборот)
     if h > w:
-        print("portrait")
+        orientation = "portrait"
     else:
-        print("albumn")
+        orientation = "albumn"
 
-    # cv2.imshow("image", image)
-    # cv2.waitKey(0)
-    # cv2.destroyAllWindows()
+    if (is_text_upside_down(image)):
+        angle += 180
 
-    print(is_text_upside_down(image))
+    return (orientation, angle)
 
 
 def is_text_upside_down(image):
 
     lines_count = count_lines(image)
-    print(f"lines count - {lines_count}")
+    # print(f"lines count - {lines_count}")
     # Удаление белых краев
     image = remove_white_margins(image)
 
@@ -141,7 +153,7 @@ def is_text_upside_down(image):
         # Закрашиваем обработанный участок
         working_image[y_start:y_end, :] = 0
 
-    print(f"upside_down_count {upside_down_count} total_lines {total_lines}")
+    # print(f"upside_down_count {upside_down_count} total_lines {total_lines}")
     # Если большинство строк перевернуто, считаем весь текст перевернутым
     if upside_down_count > total_lines / 2:
         return True  # Текст перевернут
@@ -155,8 +167,9 @@ def find_dots_and_commas(image):
     
     :param image: Изображение строки.
     :return: Список координат точек и запятых (y-координаты).
-    """
 
+    Оставлены некоторые закомментированые куски кода, которые еще могут пригодиться для отладки
+    """
 
     # Бинаризация изображения (текст белый, фон черный)
     _, image = cv2.threshold(image, 127, 255, cv2.THRESH_BINARY)
@@ -173,14 +186,20 @@ def find_dots_and_commas(image):
     contours, _ = cv2.findContours(image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
     # Создаем копию изображения для отрисовки контуров
-    output_image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)  # Преобразуем в цветное изображение
+    # output_image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)  # Преобразуем в цветное изображение
 
     # Фильтруем контуры по размеру и рисуем их
     min_area = 10  # Минимальная площадь контура (исключает шумы)
-    max_area = 40     # Максимальная площадь контура (исключает слишком большие объекты)
+    max_area = 40  # Максимальная площадь контура (исключает слишком большие объекты)
 
     dots_and_commas = []
 
+    """
+    По скольку шрифты и стили текста могут быть разными, алгоритм проводит поиск знаков препинания в некоторых "разумных" пределах
+    Точки и запятые ищутся до тех пор пока размер объекта не станет слишком большим, или не будет найдена хотя бы одна
+    В противном случае будет возвращен пустой массив и данная строка не будет учтена. 
+    Сделано это во избежание ситуации, когда за знак препинания будет ошибочно принят совсем другой символ (например съехавшая буква)
+    """
     while (len(dots_and_commas) == 0 and max_area != 70):
         for contour in contours:
             # print(1)
@@ -200,7 +219,10 @@ def find_dots_and_commas(image):
                 # cv2.destroyAllWindows()
                 #  and 
                 # print(f"is_simb - {is_simb}")
-                if (is_mostly_black_line(simb) and h // w <= 2 and h // w >= 1): # != - исключающее или. Знак препинания существует только в одной половине строки
+                if (is_mostly_black_line(simb) and h // w <= 2 and h // w >= 1): 
+
+                    # не до конца реализованная оптимизация поиска. Не закончена так как пропала необходимость.
+                    # ///////////////////////////////////////////////////////////////////////////////////////////
                     # simb_low = simb_cp[0:y + h - h//2, :]
                     # simb_up = simb_cp[y + h//2:y + h, :]
                     # is_simb = (is_mostly_black_line(simb_up) != is_mostly_black_line(simb_low))
@@ -209,10 +231,11 @@ def find_dots_and_commas(image):
                     # cv2.imshow("simb", simb_cp)
                     # cv2.waitKey(0)
                     # cv2.destroyAllWindows()
-
                     # if (is_simb):
+                    # ///////////////////////////////////////////////////////////////////////////////////////////
+
                     dots_and_commas.append(y + h)  # Нижняя граница контура
-                    cv2.drawContours(output_image, [contour], -1, (0, 255, 0), 2)  # Зеленый цвет, толщина линии 2
+                    # cv2.drawContours(output_image, [contour], -1, (0, 255, 0), 2)  # Зеленый цвет, толщина линии 2
         max_area += 5
 
     # print(f"count of dots - {len(dots_and_commas)}")
@@ -250,5 +273,8 @@ def is_line_upside_down(line):
 
 
 # Загрузка изображения
-image = cv2.imread("test_data/rotated_90_5.png", cv2.IMREAD_GRAYSCALE)
-orientation_detect(image)
+image = cv2.imread("test_data/rotated_270_1.png", cv2.IMREAD_GRAYSCALE)
+orientation = orientation_detect(image)
+
+print(f"Ориентация документа '{orientation[0]}'")
+print(f"Необходимо довернуть на угол {orientation[1]}° по часовой стрелке")

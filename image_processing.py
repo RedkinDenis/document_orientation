@@ -10,6 +10,8 @@ def resize_image_proportional(image, max_width=None, max_height=None):
     :param max_width: Максимальная ширина. Если None, ширина не ограничена.
     :param max_height: Максимальная высота. Если None, высота не ограничена.
     :return: Уменьшенное изображение.
+
+    P.s. Данная функция использовалась для отладки, чтобы уместить изображение на мониторе
     """
     # Получаем текущие размеры изображения
     height, width = image.shape[:2]
@@ -48,7 +50,7 @@ def remove_white_margins(image):
     # Нахождение контуров
     contours, _ = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     
-    # Нахождение bounding box для всех контуров
+    # Нахождение ограничивающей рамки для всех контуров
     x, y, w, h = cv2.boundingRect(np.vstack(contours))
     
     # Обрезка изображения

@@ -40,6 +40,8 @@ def find_and_ignore_first_lines(image, num_lines_to_ignore=2, region_height=50):
     :param num_lines_to_ignore: Количество строк для игнорирования.
     :param region_height: Высота участка для анализа.
     :return: Изображение с закрашенными строками.
+
+    P.s. функция может использоваться для отладки, для пропуска неинтересующих строк
     """
     working_image = image.copy()
     
@@ -53,15 +55,15 @@ def find_and_ignore_first_lines(image, num_lines_to_ignore=2, region_height=50):
     return working_image
 
 def is_mostly_black_line(line, threshold=0.02):
-
-    _, line = cv2.threshold(line, 127, 255, cv2.THRESH_BINARY)
     """
-    Проверяет, является ли строка "почти черной" (менее 10% белых пикселей).
+    Проверяет, является ли строка "почти черной" (менее 2% белых пикселей).
     
     :param line: Изображение строки.
-    :param threshold: Порог для процента белых пикселей (по умолчанию 10%).
+    :param threshold: Порог для процента белых пикселей (по умолчанию 2%).
     :return: True, если строка "почти черная", иначе False.
     """
+
+    _, line = cv2.threshold(line, 127, 255, cv2.THRESH_BINARY)
     # Подсчитываем количество белых пикселей
     white_pixels = np.sum(line == 255)
     
@@ -76,6 +78,14 @@ def is_mostly_black_line(line, threshold=0.02):
     return white_percentage < threshold
 
 def count_lines(image):
+
+    """
+    Считает количество строк с текстом в документе
+
+    :param image: Изображение в градациях серого.
+    :return: количество строк
+    """
+
     # Удаление белых краев
     image = remove_white_margins(image)
 
@@ -88,16 +98,14 @@ def count_lines(image):
     while (True):
         # Находим участок с наибольшей плотностью белых пикселей
         y_start, y_end = find_most_dense_region(working_image, 60)
-        
-        # Закрашиваем найденную строку
-        # print(1)
-        line = working_image[y_start:y_end, :]
-        if (is_mostly_black_line(line)):
 
-            # cv2.imshow("image", line)
-            # cv2.waitKey(0)
-            # cv2.destroyAllWindows()
+        # Вытаскиваем линию        
+        line = working_image[y_start:y_end, :]
+        
+        # Если найденная линия "практически черная", прекращаем поиск
+        if (is_mostly_black_line(line)):
             return count
 
-        working_image[y_start:y_end, :] = 0  # Закрашиваем черным цветом
+        # Закрашиваем найденную строку черным цветом чтобы больше не находить ее
+        working_image[y_start:y_end, :] = 0  
         count += 1
