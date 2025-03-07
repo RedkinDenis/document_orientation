@@ -57,3 +57,8 @@ def remove_white_margins(image):
     cropped = image[y:y+h, x:x+w]
     
     return cropped
+
+
+def rotate_image_90(image):
+    rotated_image = cv2.rotate(image, cv2.ROTATE_90_CLOCKWISE)
+    return rotated_image

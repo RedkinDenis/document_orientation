@@ -7,6 +7,7 @@
 
 import cv2
 import os
+import time
 
 from orientation import orientation_detect
 
@@ -30,8 +31,13 @@ for filename in os.listdir(directory):
         # Полный путь к файлу
         file_path = os.path.join(directory, filename)
         doc = cv2.imread(file_path, cv2.IMREAD_GRAYSCALE)
+
+        start = time.process_time()
         orientation, angle = orientation_detect(doc)
+        end = time.process_time()
+        t = end - start
+
         check = is_correct_orientation(filename, angle)
         # angle = detect_rotation_angle(doc)
 
-        print(f'\x1b[4m{filename}\x1b[0m rotation angle is \x1b[4m{angle}\x1b[0m: it is {check}, orientation is {orientation}') #, rotation_angle - {angle}
+        print(f'\x1b[4m{filename}\x1b[0m rotation angle is \x1b[4m{angle}\x1b[0m: it is {check}, orientation is {orientation} \x1b[31mProcessing time: {t}\x1b[0m')
