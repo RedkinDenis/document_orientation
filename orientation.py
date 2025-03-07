@@ -246,8 +246,10 @@ def find_dots_and_commas(image):
                 # print(f"is_simb - {is_simb}")
                 if (is_mostly_black_line(simb) and h // w <= 2 and h // w >= 1): 
 
-                    # не до конца реализованная оптимизация поиска. Не закончена так как пропала необходимость.
                     # ///////////////////////////////////////////////////////////////////////////////////////////
+
+                    # не до конца реализованная оптимизация поиска. Не закончена так как пропала необходимость.
+
                     # simb_low = simb_cp[0:y + h - h//2, :]
                     # simb_up = simb_cp[y + h//2:y + h, :]
                     # is_simb = (is_mostly_black_line(simb_up) != is_mostly_black_line(simb_low))
@@ -297,9 +299,9 @@ def is_line_upside_down(line):
         return 0 # строка в нормальной ориентации
 
 
-# Загрузка изображения
-image = cv2.imread("test_data/rotated_270_1.png", cv2.IMREAD_GRAYSCALE)
-orientation = orientation_detect(image)
+# # Загрузка изображения
+# image = cv2.imread("test_data/rotated_270_1.png", cv2.IMREAD_GRAYSCALE)
+# orientation = orientation_detect(image)
 
-print(f"Ориентация документа '{orientation[0]}'")
-print(f"Необходимо довернуть на угол {orientation[1]}° по часовой стрелке")
+# print(f"Ориентация документа '{orientation[0]}'")
+# print(f"Необходимо довернуть на угол {orientation[1]}° по часовой стрелке")
