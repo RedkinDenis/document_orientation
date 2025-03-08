@@ -5,9 +5,11 @@ from image_processing import *
 from lines_processing import *    
 
 def orientation_detect(image):
-
     """
     это основная функция.
+
+    image: входное изображение. должно быть открыто
+
     return: возвращает кортеж (orientation, angle)
     orientation: ориентация документа (портретная или альбомная)
     angle: угол на который необходимо повернуть документ для нормализации
@@ -127,7 +129,9 @@ def is_text_upside_down(image):
     в результате ориентация всего документа определяется по большинству
     """
 
-    lines, lines_count = find_lines(image)
+    lines, lines_count = find_lines(image, detect_line_height(image))
+    # lines, lines_count = find_lines(image)
+
     # print(f"lines count - {lines_count}")
     
     # Счетчик перевернутых строк
@@ -158,8 +162,10 @@ def is_text_upside_down(image):
         return False  # Текст в нормальной ориентации
 
 # # # Загрузка изображения
-# image = cv2.imread("test_data/rotated_270_1.png", cv2.IMREAD_GRAYSCALE)
+# image = cv2.imread("test_data/original_5.png", cv2.IMREAD_GRAYSCALE)
 # orientation = orientation_detect(image)
 
 # print(f"Ориентация документа '{orientation[0]}'")
 # print(f"Необходимо довернуть на угол {orientation[1]}° по часовой стрелке")
+
+# detect_line_width(image)

@@ -56,7 +56,7 @@ def is_mostly_black_line(line, threshold=0.02):
     # Проверяем, меньше ли процент белых пикселей порога
     return white_percentage < threshold
 
-def find_lines(image):
+def find_lines(image, line_width=60):
     """
     Находит строки с текстом в документе
 
@@ -79,7 +79,7 @@ def find_lines(image):
 
     while (True):
         # Находим участок с наибольшей плотностью белых пикселей
-        y_start, y_end = find_most_dense_region(working_image, 60)
+        y_start, y_end = find_most_dense_region(working_image, line_width)
 
         # Вытаскиваем линию        
         line = image_cp[y_start:y_end, :]
@@ -234,3 +234,90 @@ def is_line_upside_down_old(line):
         return False  # Строка в нормальной ориентации
     else:
         return True  # Строка перевернута
+    
+# ////////////////////////////////////////////////////////////////
+
+import cv2
+import numpy as np
+
+def detect_line_height(image):
+    """
+    Данная функция принимает на вход документ в виде изображения и вычисляет среднюю высоту строки
+
+    :image - изображение, должно быть открыть в черно-белом формате
+    :return: average_height - средняя высота строки
+    """
+    # Преобразование в оттенки серого
+    # gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+    # Размытие для уменьшения шума
+    blurred = cv2.GaussianBlur(image, (5, 5), 0)
+
+    # Бинаризация
+    _, binary = cv2.threshold(blurred, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+
+    # Морфологические операции для объединения контуров
+    kernel = np.ones((5, 5), np.uint8)
+    dilated = cv2.dilate(binary, kernel, iterations=2)
+    eroded = cv2.erode(dilated, kernel, iterations=1)
+
+    # Поиск контуров
+    contours, _ = cv2.findContours(eroded, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    # Группировка контуров по строкам
+    bounding_boxes = [cv2.boundingRect(c) for c in contours]
+    bounding_boxes.sort(key=lambda x: x[1])  # Сортировка по Y (высоте)
+    lines = []
+    current_line = [bounding_boxes[0]]
+    for box in bounding_boxes[1:]:
+        x, y, w, h = box
+        last_x, last_y, last_w, last_h = current_line[-1]
+        if abs(y - last_y) < 20:  # Если контуры находятся на одной строке (порог 20 пикселей)
+            current_line.append(box)
+        else:
+            lines.append(current_line)
+            current_line = [box]
+    lines.append(current_line)  # Добавить последнюю строку
+
+    # Вычисление высоты строк
+    line_heights = []
+    for line in lines:
+        heights = [box[3] for box in line]  # Высота каждого контура в строке
+        avg_line_height = sum(heights) / len(heights)  # Средняя высота строки
+        line_heights.append(avg_line_height)
+
+    # Фильтрация шумов (если есть слишком маленькие или большие строки)
+    min_line_height = 10  # Минимальная высота строки
+    max_line_height = 100  # Максимальная высота строки
+    filtered_heights = [h for h in line_heights if min_line_height <= h <= max_line_height]
+
+    # Вывод средней высоты строк
+    if filtered_heights:
+        average_height = (1.5 * sum(filtered_heights) / len(filtered_heights))
+        # print(f"Средняя высота строк: {average_height}")
+        return int(average_height)
+    else:
+        # print("Контуры не найдены")
+        return 60
+
+    # # Визуализация для отладки
+    # for line in lines:
+    #     x_coords = [box[0] for box in line]
+    #     y_coords = [box[1] for box in line]
+    #     widths = [box[2] for box in line]
+    #     heights = [box[3] for box in line]
+
+    #     line_start_x = min(x_coords)
+    #     line_start_y = min(y_coords)
+    #     line_end_x = max(x_coords) + max(widths)
+    #     line_end_y = max(y_coords) + max(heights)
+
+    #     # Отрисовка прямоугольника вокруг строки
+    #     cv2.rectangle(image, (line_start_x, line_start_y), (line_end_x, line_end_y), (0, 255, 0), 2)
+
+    # # Показать изображение
+    # cv2.imshow("Lines", image)
+    # cv2.waitKey(0)
+    # cv2.destroyAllWindows()
+
+
