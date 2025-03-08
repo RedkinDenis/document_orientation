@@ -127,33 +127,20 @@ def is_text_upside_down(image):
     в результате ориентация всего документа определяется по большинству
     """
 
-    lines_count = count_lines(image)
-    # print(f"lines count - {lines_count}")
+    lines, lines_count = find_lines(image)
+    print(f"lines count - {lines_count}")
     # Удаление белых краев
     image = remove_white_margins(image)
 
     image = cv2.bitwise_not(image)
     # Копия изображения для закрашивания
-    working_image = image.copy()
-
-    # working_image = find_and_ignore_first_lines(working_image, num_lines_to_ignore=2, region_height=60) # comm
     
     # Счетчик перевернутых строк
     upside_down_count = 0
     total_lines = 0
     
     # Анализируем строки, пока не будут обработаны все
-    for i in range(lines_count):
-        # Находим участок с наибольшей плотностью (одну строку)
-        y_start, y_end = find_most_dense_region(working_image, region_height=60)
-        
-        # Если плотность слишком мала, завершаем цикл
-        if y_end - y_start < 10:
-            break
-        
-        # Вырезаем строку
-        line = working_image[y_start:y_end, :]
-
+    for line in lines:
         # Анализируем строку
         is_line_UD = is_line_upside_down(line)
 
@@ -162,25 +149,22 @@ def is_text_upside_down(image):
             upside_down_count += 1
             total_lines += 1
 
-        elif is_line_UD == 0:
+        elif is_line_UD == 0: 
             # print('line is normal')
             total_lines += 1
 
         # cv2.imshow("image", line)
         # cv2.waitKey(0)
         # cv2.destroyAllWindows()
-        
-        # Закрашиваем обработанный участок
-        working_image[y_start:y_end, :] = 0
 
-    # print(f"upside_down_count {upside_down_count} total_lines {total_lines}")
+    print(f"upside_down_count {upside_down_count} total_lines {total_lines}")
     # Если большинство строк перевернуто, считаем весь текст перевернутым
     if upside_down_count > total_lines / 2:
         return True  # Текст перевернут
     else:
         return False  # Текст в нормальной ориентации
 
-# # Загрузка изображения
+# # # Загрузка изображения
 # image = cv2.imread("test_data/rotated_270_1.png", cv2.IMREAD_GRAYSCALE)
 # orientation = orientation_detect(image)
 

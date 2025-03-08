@@ -35,28 +35,6 @@ def find_most_dense_region(image, region_height=50):
     
     return best_row, best_row + region_height
 
-def find_and_ignore_first_lines(image, num_lines_to_ignore=2, region_height=50):
-    """
-    Находит и закрашивает первые несколько строк.
-    
-    :param image: Изображение в градациях серого.
-    :param num_lines_to_ignore: Количество строк для игнорирования.
-    :param region_height: Высота участка для анализа.
-    :return: Изображение с закрашенными строками.
-
-    P.s. функция может использоваться для отладки, для пропуска неинтересующих строк
-    """
-    working_image = image.copy()
-    
-    for _ in range(num_lines_to_ignore):
-        # Находим участок с наибольшей плотностью белых пикселей
-        y_start, y_end = find_most_dense_region(working_image, region_height)
-        
-        # Закрашиваем найденную строку
-        working_image[y_start:y_end, :] = 0  # Закрашиваем черным цветом
-    
-    return working_image
-
 def is_mostly_black_line(line, threshold=0.02):
     """
     Проверяет, является ли строка "почти черной" (менее 2% белых пикселей).
@@ -77,16 +55,16 @@ def is_mostly_black_line(line, threshold=0.02):
     white_percentage = white_pixels / total_pixels
     
     # Проверяем, меньше ли процент белых пикселей порога
-    # print(white_pixels, total_pixels, white_percentage)
     return white_percentage < threshold
 
-def count_lines(image):
-
+def find_lines(image):
     """
-    Считает количество строк с текстом в документе
+    Находит строки с текстом в документе
 
     :param image: Изображение в градациях серого.
-    :return: количество строк
+    :return: (lines, count)
+    :lines: массив "строк"
+    :count: их количество
     """
 
     # Удаление белых краев
@@ -97,17 +75,20 @@ def count_lines(image):
     working_image = image.copy()
 
     count = 0
+    lines = []
 
     while (True):
         # Находим участок с наибольшей плотностью белых пикселей
         y_start, y_end = find_most_dense_region(working_image, 60)
 
         # Вытаскиваем линию        
-        line = working_image[y_start:y_end, :]
+        line = image[y_start:y_end, :]
         
         # Если найденная линия "практически черная", прекращаем поиск
         if (is_mostly_black_line(line)):
-            return count
+            return (lines, count)
+
+        lines.append(line)
 
         # Закрашиваем найденную строку черным цветом чтобы больше не находить ее
         working_image[y_start:y_end, :] = 0  
@@ -115,7 +96,6 @@ def count_lines(image):
 
 # //////////////////////////////////////////////////////////////// 
 # Определение ориентации линии с помощью анализа точек и запятых
-
 
 def find_dots_and_commas(image):
     """
@@ -126,20 +106,17 @@ def find_dots_and_commas(image):
 
     Оставлены некоторые закомментированые куски кода, которые еще могут пригодиться для отладки
     """
+    image_cp = image.copy()
 
     # Бинаризация изображения (текст белый, фон черный)
-    _, image = cv2.threshold(image, 127, 255, cv2.THRESH_BINARY)
+    _, image_cp = cv2.threshold(image_cp, 127, 255, cv2.THRESH_BINARY)
     # image = cv2.medianBlur(image, 5)
 
     # kernel = np.ones((3, 3), np.uint8)
     # morphed = cv2.morphologyEx(binary, cv2.MORPH_OPEN, kernel)
-    
-    # cv2.imshow("Contours", image)
-    # cv2.waitKey(0)
-    # cv2.destroyAllWindows()
 
     # Находим контуры
-    contours, _ = cv2.findContours(image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    contours, _ = cv2.findContours(image_cp, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
     # Создаем копию изображения для отрисовки контуров
     # output_image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)  # Преобразуем в цветное изображение
@@ -165,7 +142,7 @@ def find_dots_and_commas(image):
             if min_area < area < max_area:
 
                 x, y, w, h = cv2.boundingRect(contour)
-                simb = image[:, x:x+w]
+                simb = image_cp[:, x:x+w]
                 # simb_cp = simb.copy()
 
                 # суть первой проверки: если выделить вертикальную полосу в которой предположительно 
@@ -193,9 +170,7 @@ def find_dots_and_commas(image):
         max_area += 5
 
     # print(f"count of dots - {len(dots_and_commas)}")
-    # cv2.imshow("Contours", output_image)
-    # cv2.waitKey(0)
-    # cv2.destroyAllWindows()
+    # show_image(output_image)
 
     return dots_and_commas
 

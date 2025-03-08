@@ -62,3 +62,8 @@ def remove_white_margins(image):
 def rotate_image_90(image):
     rotated_image = cv2.rotate(image, cv2.ROTATE_90_CLOCKWISE)
     return rotated_image
+
+def show_image(image, name="image"):
+    cv2.imshow(name, image)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()

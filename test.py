@@ -38,6 +38,5 @@ for filename in os.listdir(directory):
         t = end - start
 
         check = is_correct_orientation(filename, angle)
-        # angle = detect_rotation_angle(doc)
 
         print(f'\x1b[4m{filename}\x1b[0m rotation angle is \x1b[4m{angle}\x1b[0m: it is {check}, orientation is {orientation} \x1b[31mProcessing time: {t}\x1b[0m')
