@@ -4,7 +4,6 @@ import numpy as np
 from image_processing import *
 from lines_processing import *    
 
-
 def orientation_detect(image):
 
     """
@@ -16,16 +15,17 @@ def orientation_detect(image):
 
     angle = 0
     orientation = ''
+    working_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
     # проверяется правильность ориентации букв.
     # на данном этапе случаи поворота на 0 и 180 и на 90 и 270 градусов между собой не различимы
-    if not is_text_orientation_right(image):
+    if not is_text_orientation_right(working_image):
         # print('rotate')
-        image = rotate_image_90(image)
+        working_image = rotate_image_90(working_image)
         angle += 90
     # получаем документ который однозначно повернут на 0 или 180 градусов
     
-    (w, h) = get_horizontal_bounding_box(image)
+    (w, h) = get_horizontal_bounding_box(working_image)
 
     # у текста с портретной ориентацией высота ограничивающей рамки больше чем ее ширина (и наоборот)
     if h > w:
@@ -34,7 +34,7 @@ def orientation_detect(image):
         orientation = "albumn"
 
     # если текст все же перевернут, добавляем 180 к углу поворота
-    if (is_text_upside_down(image)):
+    if (is_text_upside_down(working_image)):
         angle += 180
 
     return (orientation, angle)
@@ -128,12 +128,7 @@ def is_text_upside_down(image):
     """
 
     lines, lines_count = find_lines(image)
-    print(f"lines count - {lines_count}")
-    # Удаление белых краев
-    image = remove_white_margins(image)
-
-    image = cv2.bitwise_not(image)
-    # Копия изображения для закрашивания
+    # print(f"lines count - {lines_count}")
     
     # Счетчик перевернутых строк
     upside_down_count = 0
@@ -153,11 +148,9 @@ def is_text_upside_down(image):
             # print('line is normal')
             total_lines += 1
 
-        # cv2.imshow("image", line)
-        # cv2.waitKey(0)
-        # cv2.destroyAllWindows()
+        # show_image(line, name="line")
 
-    print(f"upside_down_count {upside_down_count} total_lines {total_lines}")
+    # print(f"upside_down_count {upside_down_count} total_lines {total_lines}")
     # Если большинство строк перевернуто, считаем весь текст перевернутым
     if upside_down_count > total_lines / 2:
         return True  # Текст перевернут

@@ -1,6 +1,5 @@
 import cv2
 import numpy as np
-from skimage import morphology
 
 from image_processing import *
 
@@ -66,13 +65,14 @@ def find_lines(image):
     :lines: массив "строк"
     :count: их количество
     """
+    image_cp = image.copy()
 
     # Удаление белых краев
-    image = remove_white_margins(image)
+    image_cp = remove_white_margins(image_cp)
 
-    image = cv2.bitwise_not(image)
+    image_cp = cv2.bitwise_not(image_cp)
     # Копия изображения для закрашивания
-    working_image = image.copy()
+    working_image = image_cp.copy()
 
     count = 0
     lines = []
@@ -82,7 +82,7 @@ def find_lines(image):
         y_start, y_end = find_most_dense_region(working_image, 60)
 
         # Вытаскиваем линию        
-        line = image[y_start:y_end, :]
+        line = image_cp[y_start:y_end, :]
         
         # Если найденная линия "практически черная", прекращаем поиск
         if (is_mostly_black_line(line)):

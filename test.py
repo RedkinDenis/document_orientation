@@ -23,6 +23,10 @@ def is_correct_orientation (filename, angle):
 
 # Укажите путь к директории
 directory = 'test_data'
+
+all_time = 0
+periods = 0
+
 # Перебор всех файлов в директории
 for filename in os.listdir(directory):
     # Проверка, что файл имеет расширение .png
@@ -30,13 +34,18 @@ for filename in os.listdir(directory):
 
         # Полный путь к файлу
         file_path = os.path.join(directory, filename)
-        doc = cv2.imread(file_path, cv2.IMREAD_GRAYSCALE)
+        doc = cv2.imread(file_path)
 
         start = time.process_time()
         orientation, angle = orientation_detect(doc)
         end = time.process_time()
         t = end - start
 
+        all_time += t
+        periods += 1
+
         check = is_correct_orientation(filename, angle)
 
         print(f'\x1b[4m{filename}\x1b[0m rotation angle is \x1b[4m{angle}\x1b[0m: it is {check}, orientation is {orientation} \x1b[31mProcessing time: {t}\x1b[0m')
+        
+print(f"\x1b[31mMean processing time: {all_time / periods}\x1b[0m")

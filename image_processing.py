@@ -1,6 +1,5 @@
 import cv2
 import numpy as np
-from skimage import morphology
 
 def resize_image_proportional(image, max_width=None, max_height=None):
     """
