@@ -15,6 +15,11 @@ def orientation_detect(image):
     angle: угол на который необходимо повернуть документ для нормализации
     """
 
+    if image is None:
+        print("Ошибка: изображение не загружено.")
+        return
+
+
     angle = 0
     orientation = ''
     working_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -76,6 +81,7 @@ def is_text_orientation_right(image):
     # Вычитание пересечения из каждого массива
     vertical_unique = cv2.bitwise_and(vertical_thresh, cv2.bitwise_not(intersection))
     horizontal_unique = cv2.bitwise_and(horizontal_thresh, cv2.bitwise_not(intersection))
+    # (приятный бонус - мы сразу получаем инвертированные изображение, так как белый фон - тоже общий, и мы его отсекаем)
 
     # Подсчет белых пикселей
     white_vertical = cv2.countNonZero(vertical_unique)
@@ -93,10 +99,6 @@ def get_horizontal_bounding_box(image):
     Вспомогательная функция для определения ориентации
     Ограничивает весь документ рамкой и возвращает ее длину и ширину
     """
-
-    if image is None:
-        print("Ошибка: изображение не загружено.")
-        return
 
     # Применение адаптивной бинаризации
     binary = cv2.adaptiveThreshold(
